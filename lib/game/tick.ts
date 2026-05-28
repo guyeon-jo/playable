@@ -6,6 +6,7 @@ import { tryFireProjectile, updateProjectiles, applyProjectileDamage, applyMelee
 import { getSkillCandidates } from './skills';
 import { GAME_DURATION_MS } from './constants';
 import { getWaveIndex, getWaveConfig } from './spawn';
+import { spawnEnemy } from './enemies';
 
 export function gameTick(
   state: GameState,
@@ -33,7 +34,6 @@ export function gameTick(
   // Spawn enemies
   const waveConfig = getWaveConfig(s.waveIndex);
   if (now - s.lastSpawnAt >= waveConfig.spawnInterval && s.enemies.length < waveConfig.maxEnemies) {
-    const { spawnEnemy } = require('./enemies');
     const type = pickEnemyType(s.waveIndex);
     s = { ...s, enemies: [...s.enemies, spawnEnemy(type, s.player.pos)], lastSpawnAt: now };
   }
