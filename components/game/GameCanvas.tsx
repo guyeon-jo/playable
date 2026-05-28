@@ -2,13 +2,66 @@
 
 import { useRef, useEffect, MutableRefObject, RefObject } from 'react';
 import type { GameState, EnemyType } from '@/types/game';
-import { CANVAS_W, CANVAS_H } from '@/lib/game/constants';
+import { CANVAS_W, CANVAS_H, MAP_W, MAP_H } from '@/lib/game/constants';
 
 interface Props {
   gameStateRef: MutableRefObject<GameState>;
   keysRef: RefObject<Set<string>>;
   onTick: (state: GameState, dt: number, keys: Set<string>) => GameState;
 }
+
+// ─── Map data ─────────────────────────────────────────────────────────────────
+
+interface MapObject { x: number; y: number; path: string; w: number; h: number }
+
+const MAP_OBJECTS: MapObject[] = [
+  // barrels
+  { x: 280,  y: 180,  path: '/images/map/barrel_red.png',   w: 48, h: 64 },
+  { x: 345,  y: 210,  path: '/images/map/barrel_blue.png',  w: 48, h: 64 },
+  { x: 2000, y: 310,  path: '/images/map/barrel_red.png',   w: 48, h: 64 },
+  { x: 2110, y: 1490, path: '/images/map/barrel_blue.png',  w: 48, h: 64 },
+  { x: 2210, y: 910,  path: '/images/map/barrel_red.png',   w: 48, h: 64 },
+  { x: 1050, y: 1600, path: '/images/map/barrel_blue.png',  w: 48, h: 64 },
+  // garbage bins
+  { x: 600,  y: 390,  path: '/images/map/garbage_bin.png',  w: 87, h: 69 },
+  { x: 855,  y: 160,  path: '/images/map/garbage_bin.png',  w: 87, h: 69 },
+  { x: 500,  y: 1390, path: '/images/map/garbage_bin.png',  w: 87, h: 69 },
+  { x: 1310, y: 1490, path: '/images/map/garbage_bin.png',  w: 87, h: 69 },
+  // traffic cones
+  { x: 420,  y: 320,  path: '/images/map/traffic_cone.png', w: 36, h: 44 },
+  { x: 1200, y: 580,  path: '/images/map/traffic_cone.png', w: 36, h: 44 },
+  { x: 1660, y: 250,  path: '/images/map/traffic_cone.png', w: 36, h: 44 },
+  { x: 1610, y: 1590, path: '/images/map/traffic_cone.png', w: 36, h: 44 },
+  { x: 700,  y: 1100, path: '/images/map/traffic_cone.png', w: 36, h: 44 },
+  // tires
+  { x: 980,  y: 280,  path: '/images/map/tire.png',         w: 60, h: 52 },
+  { x: 1480, y: 890,  path: '/images/map/tire.png',         w: 60, h: 52 },
+  { x: 300,  y: 1300, path: '/images/map/tire.png',         w: 60, h: 52 },
+  // manholes
+  { x: 750,  y: 750,  path: '/images/map/manhole.png',      w: 48, h: 48 },
+  { x: 1800, y: 510,  path: '/images/map/manhole.png',      w: 48, h: 48 },
+  { x: 1200, y: 1200, path: '/images/map/manhole.png',      w: 48, h: 48 },
+  { x: 400,  y: 1600, path: '/images/map/manhole.png',      w: 48, h: 48 },
+  // metal plates
+  { x: 190,  y: 930,  path: '/images/map/metal_plates.png', w: 69, h: 54 },
+  { x: 1100, y: 1190, path: '/images/map/metal_plates.png', w: 69, h: 54 },
+  { x: 1850, y: 1400, path: '/images/map/metal_plates.png', w: 69, h: 54 },
+  // brick debris
+  { x: 500,  y: 600,  path: '/images/map/brick_debris.png', w: 68, h: 60 },
+  { x: 1400, y: 350,  path: '/images/map/brick_debris.png', w: 68, h: 60 },
+  { x: 2000, y: 1200, path: '/images/map/brick_debris.png', w: 68, h: 60 },
+  // street lights
+  { x: 900,  y: 100,  path: '/images/map/street_light.png', w: 69, h: 114 },
+  { x: 1700, y: 800,  path: '/images/map/street_light.png', w: 69, h: 114 },
+  { x: 200,  y: 1700, path: '/images/map/street_light.png', w: 69, h: 114 },
+  // stop signs
+  { x: 1500, y: 1300, path: '/images/map/stop_sign.png',    w: 48, h: 75 },
+  { x: 600,  y: 1700, path: '/images/map/stop_sign.png',    w: 48, h: 75 },
+  // cardboard litter
+  { x: 350,  y: 450,  path: '/images/map/cardboard.png',    w: 44, h: 36 },
+  { x: 1100, y: 900,  path: '/images/map/cardboard.png',    w: 44, h: 36 },
+  { x: 1900, y: 650,  path: '/images/map/cardboard.png',    w: 44, h: 36 },
+];
 
 // ─── Sprite cache ──────────────────────────────────────────────────────────────
 
@@ -95,6 +148,8 @@ function preload() {
   for (const types of Object.values(ENEMY_SHEETS)) {
     for (const spec of Object.values(types)) getSheet(spec[0], spec[1]);
   }
+  getSheet('/images/map/floor_tileset.png', 1);
+  for (const obj of MAP_OBJECTS) getSheet(obj.path, 1);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -177,18 +232,8 @@ function render(
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
   ctx.imageSmoothingEnabled = false;
 
-  // map grid
-  ctx.save();
-  ctx.strokeStyle = '#2a2a2a';
-  ctx.lineWidth = 1;
-  const TILE = 48;
-  for (let gx = ox % TILE; gx < CANVAS_W; gx += TILE) {
-    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, CANVAS_H); ctx.stroke();
-  }
-  for (let gy = oy % TILE; gy < CANVAS_H; gy += TILE) {
-    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(CANVAS_W, gy); ctx.stroke();
-  }
-  ctx.restore();
+  drawFloor(ctx, ox, oy);
+  drawMapObjects(ctx, ox, oy);
 
   // exp orbs
   ctx.fillStyle = '#7ec8e3';
@@ -266,4 +311,89 @@ function render(
     ctx.stroke();
   }
   ctx.restore();
+}
+
+// ─── Map rendering ────────────────────────────────────────────────────────────
+
+const FLOOR_SRC_TILE = 16; // px to crop from tileset per tile
+const FLOOR_DST_TILE = 48; // px to draw per tile
+
+function drawFloor(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
+  // void outside map
+  ctx.fillStyle = '#0c0c0c';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // visible map slice in screen space
+  const mx = Math.max(0, ox);
+  const my = Math.max(0, oy);
+  const mw = Math.min(CANVAS_W, ox + MAP_W) - mx;
+  const mh = Math.min(CANVAS_H, oy + MAP_H) - my;
+  if (mw <= 0 || mh <= 0) return;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(mx, my, mw, mh);
+  ctx.clip();
+
+  const floorImg = getSheet('/images/map/floor_tileset.png', 1).img;
+  const T = FLOOR_DST_TILE;
+  const S = FLOOR_SRC_TILE;
+
+  if (floorImg.complete && floorImg.naturalWidth > 0) {
+    // first tile (0,0,S,S) from tileset scaled to T×T, tiled across map
+    const startX = Math.floor((mx - ox) / T) * T + ox;
+    const startY = Math.floor((my - oy) / T) * T + oy;
+    for (let tx = startX; tx < mx + mw; tx += T) {
+      for (let ty = startY; ty < my + mh; ty += T) {
+        ctx.drawImage(floorImg, 0, 0, S, S, tx, ty, T, T);
+      }
+    }
+    // second tile (S,0) for subtle checkerboard variation
+    for (let tx = startX; tx < mx + mw; tx += T * 2) {
+      for (let ty = startY + T; ty < my + mh; ty += T * 2) {
+        ctx.drawImage(floorImg, S, 0, S, S, tx, ty, T, T);
+      }
+    }
+    for (let tx = startX + T; tx < mx + mw; tx += T * 2) {
+      for (let ty = startY; ty < my + mh; ty += T * 2) {
+        ctx.drawImage(floorImg, S, 0, S, S, tx, ty, T, T);
+      }
+    }
+  } else {
+    ctx.fillStyle = '#2a2b2c';
+    ctx.fillRect(mx, my, mw, mh);
+  }
+
+  // subtle tile seams
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 1;
+  const gx0 = Math.floor((mx - ox) / T) * T + ox;
+  const gy0 = Math.floor((my - oy) / T) * T + oy;
+  for (let tx = gx0; tx <= mx + mw; tx += T) {
+    ctx.beginPath(); ctx.moveTo(tx, my); ctx.lineTo(tx, my + mh); ctx.stroke();
+  }
+  for (let ty = gy0; ty <= my + mh; ty += T) {
+    ctx.beginPath(); ctx.moveTo(mx, ty); ctx.lineTo(mx + mw, ty); ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // map boundary
+  ctx.save();
+  ctx.strokeStyle = 'rgba(200,50,50,0.35)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([10, 5]);
+  ctx.strokeRect(ox, oy, MAP_W, MAP_H);
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawMapObjects(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
+  ctx.imageSmoothingEnabled = false;
+  for (const obj of MAP_OBJECTS) {
+    const sx = obj.x + ox - obj.w / 2;
+    const sy = obj.y + oy - obj.h / 2;
+    if (sx + obj.w < 0 || sx > CANVAS_W || sy + obj.h < 0 || sy > CANVAS_H) continue;
+    blit(ctx, getSheet(obj.path, 1), 0, sx, sy, obj.w, obj.h);
+  }
 }
