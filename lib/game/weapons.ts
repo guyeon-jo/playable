@@ -132,8 +132,5 @@ function dist(a: { x: number; y: number }, b: { x: number; y: number }): number 
 }
 
 function baseDamage(player: Player): number {
-  const level = player.skills.find(s =>
-    GUNNER_SKILLS.concat(SWORDSMAN_SKILLS).some(def => def.id === s.id)
-  )?.level ?? 1;
-  return 10 + (level - 1) * 5;
+  return 10 + (player.level - 1) * 3;
 }

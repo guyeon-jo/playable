@@ -15,6 +15,14 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const stateRef = useRef<GameState>(gameStateRef.current!);
+  // Stable ref to onTick — updated every render without restarting the rAF loop
+  const onTickRef = useRef(onTick);
+  useEffect(() => { onTickRef.current = onTick; });
+
+  // Sync state when parent provides a new initial state (restart / character change)
+  useEffect(() => {
+    if (gameStateRef.current) stateRef.current = gameStateRef.current;
+  }, [gameStateRef]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -22,13 +30,11 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    stateRef.current = gameStateRef.current!;
-
     const tick = (time: number) => {
       const dt = Math.min((time - (lastTimeRef.current || time)) / 1000, 0.05);
       lastTimeRef.current = time;
 
-      stateRef.current = onTick(stateRef.current, dt, keysRef.current ?? new Set());
+      stateRef.current = onTickRef.current(stateRef.current, dt, keysRef.current ?? new Set());
 
       render(ctx, stateRef.current);
       rafRef.current = requestAnimationFrame(tick);
@@ -36,7 +42,9 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [gameStateRef, keysRef, onTick]);
+  // Empty deps: rAF loop starts once on mount and never restarts
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <canvas

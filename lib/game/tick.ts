@@ -52,10 +52,13 @@ export function gameTick(
       s = { ...s, player: updatedPlayer, projectiles: [...s.projectiles, projectile] };
     }
   } else {
+    const beforeEnemies = s.enemies;
     const { enemies: afterMelee, updatedPlayer, killed } = applyMeleeAttack(s.player, s.enemies, now);
     s = { ...s, player: updatedPlayer, enemies: afterMelee, killCount: s.killCount + killed };
     if (killed > 0) {
-      const orbs = s.enemies.slice(0, killed).map(e => spawnExpOrb(e.pos, 5));
+      const afterIds = new Set(afterMelee.map(e => e.id));
+      const deadEnemies = beforeEnemies.filter(e => !afterIds.has(e.id));
+      const orbs = deadEnemies.map(e => spawnExpOrb(e.pos, e.expDrop));
       s = { ...s, expOrbs: [...s.expOrbs, ...orbs] };
     }
   }

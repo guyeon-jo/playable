@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const KEY = 'zs:unlocked:v1';
 
@@ -21,10 +21,10 @@ export function useUnlock() {
     setUnlockedState(isUnlocked());
   }, []);
 
-  const unlock = () => {
+  const unlock = useCallback(() => {
     setUnlocked();
     setUnlockedState(true);
-  };
+  }, []);
 
   return { unlocked, unlock };
 }

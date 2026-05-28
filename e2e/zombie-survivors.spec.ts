@@ -10,14 +10,18 @@ test.describe('Zombie Survivors', () => {
 
   test('총잡이 선택 후 HUD에 "5:00" 타이머가 표시된다', async ({ page }) => {
     await page.goto('/game');
-    await page.getByText('선택').first().click();
-    await expect(page.getByText('5:00')).toBeVisible({ timeout: 3000 });
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('총잡이')).toBeVisible();
+    await page.getByRole('button', { name: '선택' }).first().click();
+    await expect(page.getByText('5:00')).toBeVisible({ timeout: 10000 });
   });
 
   test('게임 시작 시 HP 바, EXP 바, 스킬 목록이 표시된다', async ({ page }) => {
     await page.goto('/game');
-    await page.getByText('선택').first().click();
-    await expect(page.getByText('LV.1')).toBeVisible({ timeout: 3000 });
-    await expect(page.locator('canvas')).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('총잡이')).toBeVisible();
+    await page.getByRole('button', { name: '선택' }).first().click();
+    await expect(page.locator('canvas')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('LV.1')).toBeVisible({ timeout: 8000 });
   });
 });
