@@ -21,6 +21,15 @@ export const SWORDSMAN_SKILLS: SkillDef[] = [
 
 export const ALL_SKILLS: SkillDef[] = [...GUNNER_SKILLS, ...SWORDSMAN_SKILLS];
 
+// Attack range (px) per gunner skill
+const SKILL_RANGES: Partial<Record<string, number>> = {
+  pistol:       300,
+  shotgun:      220,
+  flamethrower: 135,
+  grenade:      420,
+  lightning:    260,
+};
+
 // Attack interval (ms) per skill — used to determine fire rate
 const SKILL_INTERVALS: Partial<Record<string, number>> = {
   pistol:       400,
@@ -36,9 +45,8 @@ const SKILL_INTERVALS: Partial<Record<string, number>> = {
 };
 
 function effectiveInterval(player: Player): number {
-  if (player.skills.length === 0) return BASE_ATTACK_INTERVAL_MS;
   const intervals = player.skills.map(s => SKILL_INTERVALS[s.id] ?? BASE_ATTACK_INTERVAL_MS);
-  return Math.min(...intervals);
+  return intervals.length > 0 ? Math.min(...intervals) : BASE_ATTACK_INTERVAL_MS;
 }
 
 export function findNearestEnemy(playerPos: { x: number; y: number }, enemies: Enemy[]): Enemy | null {
@@ -70,31 +78,25 @@ export function tryFireProjectiles(
   enemies: Enemy[],
   now: number,
 ): { projectiles: Projectile[]; updatedPlayer: Player } {
-  if (now < player.attackCooldownUntil) return { projectiles: [], updatedPlayer: player };
-
   const target = findNearestEnemy(player.pos, enemies);
   if (!target) return { projectiles: [], updatedPlayer: player };
 
   const base = baseDamage(player);
   const projectiles: Projectile[] = [];
 
-  if (player.skills.length === 0) {
-    // Default: basic single shot when no skill acquired yet
-    const d = dist(player.pos, target.pos);
-    if (d <= ATTACK_RANGE) {
-      projectiles.push(makeProjectile(player.pos, target.pos, base, 5, 400));
-    }
-  } else {
-    for (const skill of player.skills) {
-      projectiles.push(...fireSkill(player, skill, target, enemies, base));
-    }
-  }
+  const updatedSkills = player.skills.map(skill => {
+    if (now < skill.cooldownUntil) return skill;
+    const fired = fireSkill(player, skill, target, enemies, base);
+    if (fired.length === 0) return skill;
+    projectiles.push(...fired);
+    return { ...skill, cooldownUntil: now + (SKILL_INTERVALS[skill.id] ?? BASE_ATTACK_INTERVAL_MS) };
+  });
 
   if (projectiles.length === 0) return { projectiles: [], updatedPlayer: player };
 
   return {
     projectiles,
-    updatedPlayer: { ...player, attackCooldownUntil: now + effectiveInterval(player) },
+    updatedPlayer: { ...player, skills: updatedSkills },
   };
 }
 
@@ -110,14 +112,12 @@ function fireSkill(
 
   switch (id) {
     case 'pistol': {
-      if (d > ATTACK_RANGE) return [];
-      // Single fast shot, damage increases with level
+      if (d > (SKILL_RANGES.pistol ?? ATTACK_RANGE)) return [];
       return [makeProjectile(player.pos, target.pos, base * (1 + level * 0.25), 5, 450)];
     }
 
     case 'shotgun': {
-      if (d > ATTACK_RANGE) return [];
-      // Fan spread: 3+level pellets, ±30°
+      if (d > (SKILL_RANGES.shotgun ?? ATTACK_RANGE)) return [];
       const count = 3 + level;
       const spread = Math.PI / 6;
       const baseAngle = Math.atan2(target.pos.y - player.pos.y, target.pos.x - player.pos.x);
@@ -129,9 +129,7 @@ function fireSkill(
     }
 
     case 'flamethrower': {
-      // Short range, rapid tight burst
-      const range = ATTACK_RANGE * 0.45;
-      if (d > range) return [];
+      if (d > (SKILL_RANGES.flamethrower ?? ATTACK_RANGE)) return [];
       const count = 2 + level;
       const baseAngle = Math.atan2(target.pos.y - player.pos.y, target.pos.x - player.pos.x);
       return Array.from({ length: Math.min(count, 6) }, (_, i) => {
@@ -143,13 +141,12 @@ function fireSkill(
     }
 
     case 'grenade': {
-      if (d > ATTACK_RANGE * 1.4) return [];
-      // Slow heavy projectile, large radius, high damage
-      return [makeProjectile(player.pos, target.pos, base * 2.5 * (1 + level * 0.3), 14, 180)];
+      if (d > (SKILL_RANGES.grenade ?? ATTACK_RANGE)) return [];
+      return [makeProjectile(player.pos, target.pos, base * 2.5 * (1 + level * 0.3), 14, 280)];
     }
 
     case 'lightning': {
-      if (d > ATTACK_RANGE) return [];
+      if (d > (SKILL_RANGES.lightning ?? ATTACK_RANGE)) return [];
       // Hits target + up to level additional nearby enemies
       const chainTargets = [
         target,

@@ -5,6 +5,11 @@ import {
 } from './constants';
 import { nanoid } from 'nanoid';
 
+const DEFAULT_SKILL: Record<CharacterType, string> = {
+  gunner: 'pistol',
+  swordsman: 'spin_slash',
+};
+
 export function createPlayer(character: CharacterType): Player {
   const maxHp = character === 'swordsman' ? 120 : 100;
   return {
@@ -17,7 +22,7 @@ export function createPlayer(character: CharacterType): Player {
     character,
     exp: 0,
     level: 1,
-    skills: [],
+    skills: [{ id: DEFAULT_SKILL[character], level: 1, cooldownUntil: 0 }],
     invincibleUntil: 0,
     attackCooldownUntil: 0,
   };

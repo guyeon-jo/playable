@@ -91,7 +91,7 @@ export function applySkillChoice(state: GameState, skillId: SkillId): GameState 
   const existing = player.skills.find(s => s.id === skillId);
   const newSkills = existing
     ? player.skills.map(s => s.id === skillId ? { ...s, level: s.level + 1 } : s)
-    : [...player.skills, { id: skillId, level: 1 }];
+    : [...player.skills, { id: skillId, level: 1, cooldownUntil: 0 }];
 
   return {
     ...state,

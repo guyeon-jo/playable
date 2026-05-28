@@ -36,7 +36,10 @@ describe('tryFireProjectile', () => {
   });
 
   it('쿨다운 내에는 투사체가 생성되지 않는다', () => {
-    const player: Player = { ...createPlayer('gunner'), attackCooldownUntil: 9999 };
+    const player: Player = {
+      ...createPlayer('gunner'),
+      skills: [{ id: 'pistol', level: 1, cooldownUntil: 9999 }],
+    };
     const enemy = makeEnemy(player.pos.x + 100, player.pos.y);
     const result = tryFireProjectile(player, [enemy], 1000);
     expect(result.projectile).toBeNull();
@@ -47,8 +50,7 @@ describe('tryFireProjectiles (스킬 기반)', () => {
   it('산탄총 스킬: 복수 투사체가 생성된다', () => {
     const player: Player = {
       ...createPlayer('gunner'),
-      attackCooldownUntil: 0,
-      skills: [{ id: 'shotgun', level: 1 }],
+      skills: [{ id: 'shotgun', level: 1, cooldownUntil: 0 }],
     };
     const enemy = makeEnemy(player.pos.x + 100, player.pos.y);
     const { projectiles } = tryFireProjectiles(player, [enemy], 1000);
@@ -58,8 +60,7 @@ describe('tryFireProjectiles (스킬 기반)', () => {
   it('수류탄 스킬: 큰 반경의 투사체가 생성된다', () => {
     const player: Player = {
       ...createPlayer('gunner'),
-      attackCooldownUntil: 0,
-      skills: [{ id: 'grenade', level: 1 }],
+      skills: [{ id: 'grenade', level: 1, cooldownUntil: 0 }],
     };
     const enemy = makeEnemy(player.pos.x + 100, player.pos.y);
     const { projectiles } = tryFireProjectiles(player, [enemy], 1000);
@@ -69,8 +70,7 @@ describe('tryFireProjectiles (스킬 기반)', () => {
   it('화염방사기 스킬: 범위 외 적에게는 발사하지 않는다', () => {
     const player: Player = {
       ...createPlayer('gunner'),
-      attackCooldownUntil: 0,
-      skills: [{ id: 'flamethrower', level: 1 }],
+      skills: [{ id: 'flamethrower', level: 1, cooldownUntil: 0 }],
     };
     // Flamethrower range ~45% of ATTACK_RANGE(300) = ~135px; enemy at 200px
     const enemy = makeEnemy(player.pos.x + 200, player.pos.y);

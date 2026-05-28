@@ -1,7 +1,34 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import type { CharacterType } from '@/types/game';
 import { CHARACTER_DEFS } from '@/lib/game/characters';
+
+function SpritePreview({ src, frames, size, grayscale }: { src: string; frames: number; size: number; grayscale?: boolean }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const img = new Image();
+    img.onload = () => {
+      const fw = img.naturalWidth / frames;
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, fw, img.naturalHeight, 0, 0, size, size);
+    };
+    img.src = src;
+  }, [src, frames, size]);
+  return (
+    <canvas
+      ref={ref}
+      width={size}
+      height={size}
+      style={{ display: 'block', imageRendering: 'pixelated', filter: grayscale ? 'grayscale(1) brightness(0.4)' : 'none' }}
+    />
+  );
+}
 
 interface Props {
   unlocked: boolean;
@@ -42,16 +69,13 @@ export function CharacterSelect({ unlocked, onSelect }: Props) {
               }}
             >
               {/* Character sprite */}
-              <div style={{
-                width: 72, height: 72, margin: '0 auto 12px',
-                backgroundImage: 'url(/zombie-characters.png)',
-                backgroundSize: '288px 432px',
-                backgroundPosition: char.type === 'gunner' ? '0px 0px' : '-144px 0px',
-                imageRendering: 'pixelated',
-                borderRadius: 4,
-                position: 'relative',
-                filter: isLocked ? 'grayscale(1) brightness(0.4)' : 'none',
-              }}>
+              <div style={{ width: 72, height: 72, margin: '0 auto 12px', position: 'relative', borderRadius: 4, overflow: 'hidden' }}>
+                <SpritePreview
+                  src="/images/character/idle_down.png"
+                  frames={6}
+                  size={72}
+                  grayscale={isLocked}
+                />
                 {isLocked && (
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🔒</div>
                 )}

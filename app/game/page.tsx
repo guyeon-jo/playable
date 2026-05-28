@@ -10,6 +10,7 @@ import { getSkillCandidates } from '@/lib/game/skills';
 import { GAME_DURATION_MS } from '@/lib/game/constants';
 import { expThreshold } from '@/lib/game/entities';
 import { CharacterSelect } from '@/components/game/CharacterSelect';
+import { TitleScreen } from '@/components/game/TitleScreen';
 import { GameHUD } from '@/components/game/GameHUD';
 import { LevelUpModal } from '@/components/game/LevelUpModal';
 import { ResultScreen } from '@/components/game/ResultScreen';
@@ -21,7 +22,7 @@ const GameCanvas = dynamic(
   { ssr: false },
 );
 
-type Screen = 'characterSelect' | 'playing';
+type Screen = 'title' | 'characterSelect' | 'playing';
 
 function makeInitialState(character: CharacterType): GameState {
   const player = createPlayer(character);
@@ -42,7 +43,7 @@ function makeInitialState(character: CharacterType): GameState {
 
 export default function GamePage() {
   const { unlocked, unlock } = useUnlock();
-  const [screen, setScreen] = useState<Screen>('characterSelect');
+  const [screen, setScreen] = useState<Screen>('title');
   const [character, setCharacter] = useState<CharacterType>('gunner');
 
   // React UI state — only what HUD/overlays need
@@ -147,6 +148,10 @@ export default function GamePage() {
     firstPlayRef.current = false;
     setScreen('characterSelect');
   }, []);
+
+  if (screen === 'title') {
+    return <TitleScreen onStart={() => setScreen('characterSelect')} />;
+  }
 
   if (screen === 'characterSelect') {
     return <CharacterSelect unlocked={unlocked} onSelect={handleSelectCharacter} />;

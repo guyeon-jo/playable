@@ -13,7 +13,7 @@ interface Props {
   skills: SkillInstance[];
 }
 
-const MAX_SKILL_SLOTS = 5;
+const MAX_SKILL_SLOTS = 4;
 
 function formatTime(ms: number): string {
   const totalSec = Math.max(0, Math.ceil(ms / 1000));

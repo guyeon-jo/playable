@@ -23,6 +23,7 @@ export interface Entity {
 export interface SkillInstance {
   id: SkillId;
   level: number;
+  cooldownUntil: number;
 }
 
 export interface Player extends Entity {
