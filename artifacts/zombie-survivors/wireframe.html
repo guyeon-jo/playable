@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe: Zombie Survivors</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root {
+    --w-bg: #f5f5f5;
+    --w-border: #ccc;
+    --w-text: #555;
+    --w-muted: #aaa;
+    --w-fill: #eee;
+  }
+  * { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; color: var(--w-text); }
+  body { background: var(--w-bg); }
+  nav { position: sticky; top: 0; z-index: 40; background: var(--w-bg); border-bottom: 1px solid var(--w-border); }
+  nav button { cursor: pointer; font-size: 13px; }
+  nav button:hover { background: var(--w-fill); border-radius: 4px; }
+  nav button.active { font-weight: bold; border-bottom: 2px solid var(--w-text); }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .vp-toggle button { font-size: 12px; padding: 2px 8px; border: 1px solid var(--w-border); cursor: pointer; background: white; }
+  .vp-toggle button:first-child { border-radius: 4px 0 0 4px; }
+  .vp-toggle button:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+  .vp-toggle button.active { background: var(--w-text); color: white; }
+  body.viewport-mobile .screen-content { max-width: 375px !important; margin: 24px auto !important; border: 2px solid var(--w-border); border-radius: 24px; min-height: 667px; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 24px 12px !important; }
+  .screen-notes { background: #fffde7; border-left: 3px solid #ffd54f; padding: 12px 16px; margin-top: 24px; font-size: 13px; border-radius: 0 4px 4px 0; }
+  .screen-notes summary { cursor: pointer; font-weight: bold; font-size: 12px; color: #b0a050; text-transform: uppercase; letter-spacing: 0.05em; }
+  .screen-notes p { margin: 6px 0 2px; color: #777; }
+  .screen-notes ul { margin: 4px 0 0 16px; padding: 0; color: #777; }
+  .screen-notes li { margin: 2px 0; }
+
+  /* Game wireframe components — w- prefix */
+  .w-btn       { padding: 8px 20px; border: 1px solid var(--w-border); background: white; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .w-btn-primary { padding: 8px 20px; border: 1px solid var(--w-text); background: var(--w-text); color: white !important; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .w-btn-disabled { padding: 8px 20px; border: 1px dashed var(--w-border); background: var(--w-fill); color: var(--w-muted) !important; cursor: not-allowed; font-size: 13px; font-family: inherit; }
+  .w-char-card { border: 2px solid var(--w-border); background: white; padding: 16px; text-align: center; }
+  .w-char-card:not(.locked) { cursor: pointer; }
+  .w-char-card:not(.locked):hover { border-color: var(--w-text); }
+  .w-char-card.locked { opacity: 0.55; }
+  .w-sprite { background: var(--w-fill); border: 1px dashed var(--w-border); display: flex; align-items: center; justify-content: center; color: var(--w-muted); font-size: 10px; }
+  .w-bar-track { height: 10px; background: var(--w-fill); border: 1px solid var(--w-border); overflow: hidden; }
+  .w-bar-fill  { height: 100%; background: var(--w-text); }
+  .w-bar-exp   { height: 100%; background: var(--w-muted); }
+  .w-skill-slot  { border: 1px solid var(--w-border); background: white; padding: 3px 8px; font-size: 11px; text-align: center; white-space: nowrap; }
+  .w-skill-empty { border: 1px dashed var(--w-border); background: var(--w-fill); padding: 3px 8px; font-size: 11px; text-align: center; color: var(--w-muted); }
+  .w-canvas {
+    position: relative; overflow: hidden; background-color: var(--w-fill);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 47px, var(--w-border) 48px),
+      repeating-linear-gradient(90deg, transparent, transparent 47px, var(--w-border) 48px);
+  }
+  .w-entity { position: absolute; border: 1px solid var(--w-border); display: flex; align-items: center; justify-content: center; font-size: 9px; background: white; }
+  .w-entity.w-player { border: 2px solid var(--w-text); font-size: 10px; font-weight: bold; background: var(--w-fill); }
+  .w-orb    { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--w-muted); background: white; }
+  .w-bullet { position: absolute; width: 12px; height: 3px; background: var(--w-text); border-radius: 1px; }
+  .w-ring   { position: absolute; border: 1px dashed var(--w-border); border-radius: 50%; pointer-events: none; }
+  .w-skill-card { border: 1px solid var(--w-border); background: white; padding: 14px 12px; cursor: pointer; flex: 1; min-width: 100px; }
+  .w-skill-card:hover { border-color: var(--w-text); }
+  .w-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--w-fill); }
+  .w-stat-row:last-child { border-bottom: none; }
+  .w-unlock { border: 2px dashed var(--w-border); background: white; padding: 12px 16px; text-align: center; }
+</style>
+</head>
+<body class="p-0 m-0 viewport-desktop">
+
+<nav class="flex items-center gap-1 px-4 py-2 flex-wrap">
+  <span class="text-xs mr-2" style="color:var(--w-muted)">wireframe</span>
+  <button id="nav-0" onclick="show(0)" class="px-2 py-1">캐릭터선택(초기)</button>
+  <button id="nav-1" onclick="show(1)" class="px-2 py-1">캐릭터선택(해금)</button>
+  <button id="nav-2" onclick="show(2)" class="px-2 py-1">게임(총잡이)</button>
+  <button id="nav-3" onclick="show(3)" class="px-2 py-1">게임(HP위기)</button>
+  <button id="nav-4" onclick="show(4)" class="px-2 py-1">레벨업선택</button>
+  <button id="nav-5" onclick="show(5)" class="px-2 py-1">게임오버</button>
+  <button id="nav-6" onclick="show(6)" class="px-2 py-1">클리어</button>
+  <button id="nav-7" onclick="show(7)" class="px-2 py-1">게임(검사)</button>
+  <div class="vp-toggle flex ml-auto">
+    <button id="vp-desktop" onclick="setViewport('desktop')" class="active">Desktop</button>
+    <button id="vp-mobile"  onclick="setViewport('mobile')">Mobile</button>
+  </div>
+</nav>
+
+<!-- ── 0. 캐릭터 선택 (검사 잠금) ── Scenario 1 -->
+<div id="screen-0" class="screen" data-scenario="scenario-1">
+  <div class="screen-content @container max-w-2xl mx-auto p-8">
+
+    <div class="text-center mb-8">
+      <div class="text-2xl font-bold mb-1" style="letter-spacing:.1em;">ZOMBIE SURVIVORS</div>
+      <div class="text-sm" style="color:var(--w-muted)">캐릭터를 선택하세요</div>
+    </div>
+
+    <div class="flex gap-6 justify-center flex-wrap @md:flex-nowrap">
+      <!-- 총잡이 -->
+      <div class="w-char-card flex-1" style="max-width:220px;">
+        <div class="w-sprite mx-auto mb-3" style="width:72px;height:72px;">스프라이트</div>
+        <div class="font-bold mb-1">총잡이</div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">원거리 자동 공격</div>
+        <div class="text-xs flex justify-between mb-1"><span>이동속도</span><span>★★★☆☆</span></div>
+        <div class="text-xs flex justify-between mb-4"><span>체력</span><span>★★★☆☆</span></div>
+        <button class="w-btn-primary" style="width:100%">선택</button>
+      </div>
+
+      <!-- 검사 (잠금) -->
+      <div class="w-char-card locked flex-1" style="max-width:220px;position:relative;">
+        <div style="position:absolute;top:8px;right:8px;"><i data-lucide="lock" style="width:14px;height:14px;"></i></div>
+        <div class="w-sprite mx-auto mb-3" style="width:72px;height:72px;">
+          <i data-lucide="lock" style="width:24px;height:24px;"></i>
+        </div>
+        <div class="font-bold mb-1">검사</div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">근접 범위 자동 공격</div>
+        <div class="text-xs flex justify-between mb-1"><span>이동속도</span><span>★★★★★</span></div>
+        <div class="text-xs flex justify-between mb-4"><span>체력</span><span>★★★★★</span></div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">첫 플레이 후 해금</div>
+        <button class="w-btn-disabled" style="width:100%">잠금</button>
+      </div>
+    </div>
+
+    <div class="screen-notes">
+      <details open><summary>Notes</summary><ul>
+        <li>트리거: 게임 최초 진입 또는 검사 미해금 상태</li>
+        <li>인터랙션: 총잡이 "선택" → 게임 시작</li>
+        <li>인터랙션: 검사 카드 클릭 → 반응 없음</li>
+      </ul></details>
+    </div>
+  </div>
+</div>
+
+<!-- ── 1. 캐릭터 선택 (검사 해금) ── Scenario 11, 13 -->
+<div id="screen-1" class="screen" data-scenario="scenario-11, scenario-13">
+  <div class="screen-content @container max-w-2xl mx-auto p-8">
+
+    <div class="text-center mb-8">
+      <div class="text-2xl font-bold mb-1" style="letter-spacing:.1em;">ZOMBIE SURVIVORS</div>
+      <div class="text-sm" style="color:var(--w-muted)">캐릭터를 선택하세요</div>
+    </div>
+
+    <div class="flex gap-6 justify-center flex-wrap @md:flex-nowrap">
+      <!-- 총잡이 -->
+      <div class="w-char-card flex-1" style="max-width:220px;">
+        <div class="w-sprite mx-auto mb-3" style="width:72px;height:72px;">스프라이트</div>
+        <div class="font-bold mb-1">총잡이</div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">원거리 자동 공격</div>
+        <div class="text-xs flex justify-between mb-1"><span>이동속도</span><span>★★★☆☆</span></div>
+        <div class="text-xs flex justify-between mb-4"><span>체력</span><span>★★★☆☆</span></div>
+        <button class="w-btn-primary" style="width:100%">선택</button>
+      </div>
+
+      <!-- 검사 (해금) -->
+      <div class="w-char-card flex-1" style="max-width:220px;position:relative;">
+        <div style="position:absolute;top:8px;right:8px;background:var(--w-text);padding:2px 6px;">
+          <span style="color:white;font-size:10px;">NEW</span>
+        </div>
+        <div class="w-sprite mx-auto mb-3" style="width:72px;height:72px;">스프라이트</div>
+        <div class="font-bold mb-1">검사</div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">근접 범위 자동 공격</div>
+        <div class="text-xs flex justify-between mb-1"><span>이동속도</span><span>★★★★★</span></div>
+        <div class="text-xs flex justify-between mb-4"><span>체력</span><span>★★★★★</span></div>
+        <button class="w-btn-primary" style="width:100%">선택</button>
+      </div>
+    </div>
+
+    <div class="screen-notes">
+      <details open><summary>Notes</summary><ul>
+        <li>트리거: 첫 플레이 완료(클리어 or 게임오버) 이후</li>
+        <li>인터랙션: 두 카드 모두 클릭 가능 → 선택 캐릭터로 게임 시작</li>
+        <li>새로고침 후에도 검사 해금 상태 유지</li>
+      </ul></details>
+    </div>
+  </div>
+</div>
+
+<!-- ── 2. 게임 플레이 — 총잡이 (일반) ── Scenario 2,3,4,5,8 -->
+<div id="screen-2" class="screen" data-scenario="scenario-2, scenario-3, scenario-4, scenario-5, scenario-8">
+  <div class="screen-content @container max-w-4xl mx-auto p-4">
+
+    <!-- HUD Top -->
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-xs font-bold">HP</span>
+      <div class="w-bar-track" style="width:140px;"><div class="w-bar-fill" style="width:80%;"></div></div>
+      <span class="text-xs" style="color:var(--w-muted)">80/100</span>
+      <div class="text-xl font-bold mx-auto" style="letter-spacing:.05em;">4:32</div>
+      <span class="text-xs font-bold">LV.3</span>
+      <div class="w-bar-track" style="width:100px;"><div class="w-bar-exp" style="width:45%;"></div></div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="w-canvas" style="height:360px;">
+      <!-- player -->
+      <div class="w-entity w-player" style="width:32px;height:32px;left:calc(42% - 16px);top:calc(44% - 16px);">총잡이</div>
+      <!-- bullets -->
+      <div class="w-bullet" style="left:47%;top:41%;transform:rotate(-25deg);"></div>
+      <div class="w-bullet" style="left:51%;top:37%;transform:rotate(-8deg);"></div>
+      <!-- normal zombies -->
+      <div class="w-entity" style="width:24px;height:24px;left:57%;top:29%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:23%;top:51%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:66%;top:56%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:13%;top:22%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:72%;top:18%;">Z</div>
+      <!-- fast zombie -->
+      <div class="w-entity" style="width:20px;height:20px;left:61%;top:43%;font-size:8px;">FZ</div>
+      <!-- tank zombie -->
+      <div class="w-entity" style="width:36px;height:36px;left:29%;top:14%;font-size:8px;font-weight:bold;background:var(--w-fill);">TANK</div>
+      <!-- exp orbs -->
+      <div class="w-orb" style="left:51%;top:59%;"></div>
+      <div class="w-orb" style="left:53%;top:62%;"></div>
+      <div class="w-orb" style="left:49%;top:61%;"></div>
+      <!-- spawn hint -->
+      <div style="position:absolute;right:6px;top:50%;font-size:10px;color:var(--w-muted);">← 스폰</div>
+      <div style="position:absolute;bottom:6px;left:50%;font-size:10px;color:var(--w-muted);">↑ 스폰</div>
+    </div>
+
+    <!-- HUD Bottom -->
+    <div class="flex gap-2 mt-2">
+      <div class="w-skill-slot">권총 Lv.2</div>
+      <div class="w-skill-slot">산탄총 Lv.1</div>
+      <div class="w-skill-empty">—</div>
+      <div class="w-skill-empty">—</div>
+      <div class="w-skill-empty">—</div>
+    </div>
+
+    <div class="screen-notes">
+      <details open><summary>Notes</summary><ul>
+        <li>트리거: 총잡이 선택 후 게임 시작</li>
+        <li>인터랙션: WASD/방향키 이동 → 카메라 추적</li>
+        <li>인터랙션: 자동 공격 — 가장 가까운 적으로 투사체 발사</li>
+        <li>인터랙션: EXP 구슬에 닿으면 수집 → EXP 바 증가</li>
+        <li>전환: EXP 바 가득 참 → 레벨업 선택 화면 (일시정지)</li>
+        <li>전환: HP 0 → 게임오버 / 타이머 0:00 → 클리어</li>
+        <li>NOTE: 게임은 데스크톱 전용 (키보드)</li>
+      </ul></details>
+    </div>
+  </div>
+</div>
+
+<!-- ── 3. 게임 플레이 — HP 위기 ── Scenario 9 -->
+<div id="screen-3" class="screen" data-scenario="scenario-9">
+  <div class="screen-content @container max-w-4xl mx-auto p-4">
+
+    <!-- HUD Top (HP 낮음) -->
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-xs font-bold">HP</span>
+      <div class="w-bar-track" style="width:140px;"><div class="w-bar-fill" style="width:15%;"></div></div>
+      <span class="text-xs" style="color:var(--w-muted)">15/100</span>
+      <div class="text-xl font-bold mx-auto">3:10</div>
+      <span class="text-xs font-bold">LV.6</span>
+      <div class="w-bar-track" style="width:100px;"><div class="w-bar-exp" style="width:70%;"></div></div>
+    </div>
+
+    <!-- Canvas (적 다수, 피격 표시) -->
+    <div class="w-canvas" style="height:360px;">
+      <!-- player (깜빡임 표현: 점선 테두리) -->
+      <div class="w-entity w-player" style="width:32px;height:32px;left:calc(42% - 16px);top:calc(44% - 16px);border-style:dashed;">총잡이</div>
+      <!-- zombies crowding in -->
+      <div class="w-entity" style="width:24px;height:24px;left:49%;top:36%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:37%;top:38%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:54%;top:50%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:29%;top:53%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:61%;top:29%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:19%;top:42%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:66%;top:61%;">Z</div>
+      <div class="w-entity" style="width:20px;height:20px;left:47%;top:54%;font-size:8px;">FZ</div>
+      <div class="w-entity" style="width:20px;height:20px;left:34%;top:30%;font-size:8px;">FZ</div>
+      <!-- hit indicator -->
+      <div style="position:absolute;left:46%;top:47%;font-size:9px;color:var(--w-muted);">피격!</div>
+      <div style="position:absolute;top:6px;left:6px;font-size:10px;color:var(--w-muted);">※ 피격 시 캐릭터 깜빡임 (무적 시간)</div>
+    </div>
+
+    <!-- HUD Bottom -->
+    <div class="flex gap-2 mt-2">
+      <div class="w-skill-slot">권총 Lv.3</div>
+      <div class="w-skill-slot">산탄총 Lv.2</div>
+      <div class="w-skill-slot">화염방사기 Lv.1</div>
+      <div class="w-skill-empty">—</div>
+      <div class="w-skill-empty">—</div>
+    </div>
+
+    <div class="screen-notes">
+      <details open><summary>Notes</summary><ul>
+        <li>트리거: 적이 플레이어에 닿아 피해 입힌 직후</li>
+        <li>HP 바 15% — 위기 상태 시각화</li>
+        <li>플레이어 깜빡임 = 피격 후 무적 시간</li>
+        <li>전환: HP 0 → 게임오버 화면</li>
+      </ul></details>
+    </div>
+  </div>
+</div>
+
+<!-- ── 4. 레벨업 선택 ── Scenario 6, 7 -->
+<div id="screen-4" class="screen" data-scenario="scenario-6, scenario-7">
+  <div class="screen-content @container max-w-4xl mx-auto p-4">
+
+    <!-- HUD Top (dimmed — paused) -->
+    <div class="flex items-center gap-3 mb-2" style="opacity:.35;">
+      <span class="text-xs font-bold">HP</span>
+      <div class="w-bar-track" style="width:140px;"><div class="w-bar-fill" style="width:65%;"></div></div>
+      <span class="text-xs" style="color:var(--w-muted)">65/100</span>
+      <div class="text-xl font-bold mx-auto">3:45</div>
+      <span class="text-xs font-bold">LV.4→5</span>
+      <div class="w-bar-track" style="width:100px;"><div class="w-bar-exp" style="width:100%;"></div></div>
+    </div>
+
+    <!-- Canvas + Overlay -->
+    <div class="w-canvas" style="height:360px;position:relative;">
+      <!-- frozen game (dimmed) -->
+      <div class="w-entity w-player" style="width:32px;height:32px;left:calc(42%);top:calc(44%);opacity:.3;">총잡이</div>
+      <div class="w-entity" style="width:24px;height:24px;left:57%;top:29%;opacity:.3;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:23%;top:51%;opacity:.3;">Z</div>
+
+      <!-- Overlay -->
+      <div style="position:absolute;inset:0;background:rgba(245,245,245,0.90);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:16px;">
+        <div class="font-bold text-lg mb-4" style="letter-spacing:.08em;">LEVEL UP!  LV.5</div>
+        <div class="flex gap-3 flex-wrap justify-center" style="width:100%;max-width:520px;">
+
+          <!-- Card 1: new skill -->
+          <div class="w-skill-card">
+            <div class="w-sprite mb-2" style="width:32px;height:32px;font-size:9px;">아이콘</div>
+            <div class="font-bold text-sm mb-1">화염방사기</div>
+            <div class="text-xs" style="color:var(--w-muted)">전방 부채꼴 연속 화염</div>
+          </div>
+
+          <!-- Card 2: new skill -->
+          <div class="w-skill-card">
+            <div class="w-sprite mb-2" style="width:32px;height:32px;font-size:9px;">아이콘</div>
+            <div class="font-bold text-sm mb-1">수류탄</div>
+            <div class="text-xs" style="color:var(--w-muted)">범위 폭발 피해</div>
+          </div>
+
+          <!-- Card 3: upgrade (dashed = already owned) -->
+          <div class="w-skill-card" style="border-style:dashed;">
+            <div class="w-sprite mb-2" style="width:32px;height:32px;font-size:9px;">아이콘</div>
+            <div class="font-bold text-sm mb-1">산탄총 <span style="font-size:10px;border:1px solid var(--w-border);padding:1px 4px;">Lv.2→3</span></div>
+            <div class="text-xs" style="color:var(--w-muted)">산탄 수 +2, 피해 +15%</div>
+          </div>
+
+        </div>
+        <div class="text-xs mt-3" style="color:var(--w-muted);">카드를 클릭해 선택하세요</div>
+      </div>
+    </div>
+
+    <!-- HUD Bottom (dimmed) -->
+    <div class="flex gap-2 mt-2" style="opacity:.35;">
+      <div class="w-skill-slot">권총 Lv.2</div>
+      <div class="w-skill-slot">산탄총 Lv.2</div>
+      <div class="w-skill-empty">—</div>
+      <div class="w-skill-empty">—</div>
+      <div class="w-skill-empty">—</div>
+    </div>
+
+    <div class="screen-notes">
+      <details open><summary>Notes</summary><ul>
+        <li>트리거: EXP 바 가득 참 (레벨업 순간)</li>
+        <li>게임 일시정지 — 적·투사체·타이머 모두 멈춤</li>
+        <li>인터랙션: 카드 1장 클릭 → 스킬 획득 후 게임 재개</li>
+        <li>점선 테두리 카드 = 이미 보유한 스킬 업그레이드</li>
+        <li>선택 후 해당 스킬이 HUD 스킬 목록에 추가/갱신됨</li>
+      </ul></details>
+    </div>
+  </div>
+</div>
+
+<!-- ── 5. 게임오버 (첫 플레이 → 검사 해금) ── Scenario 10, 11 -->
+<div id="screen-5" class="screen" data-scenario="scenario-10, scenario-11">
+  <div class="screen-content @container max-w-lg mx-auto p-8">
+
+    <div class="text-center mb-6">
+      <div class="text-3xl font-bold mb-1" style="letter-spacing:.1em;">GAME OVER</div>
+      <div class="text-sm" style="color:var(--w-muted)">좀비에게 쓰러졌습니다</div>
+    </div>
+
+    <!-- 검사 해금 배너 -->
+    <div class="w-unlock mb-6">
+      <i data-lucide="star" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      <span class="font-bold">검사 해금!</span>
+      <div class="text-xs mt-1" style="color:var(--w-muted);">캐릭터 선택에서 검사를 고를 수 있습니다</div>
+    </div>
+
+    <!-- 통계 -->
+    <div style="border:1px dashed var(--w-border);margin-bottom:24px;">
+      <div class="w-stat-row"><span class="text-sm">생존 시간</span><span class="font-bold">2:47</span></div>
+      <div class="w-stat-row"><span class="text-sm">처치한 좀비</span><span class="font-bold">83마리</span></div>
+      <div class="w-stat-row"><span class="text-sm">달성 레벨</span><span class="font-bold">5</span></div>
+    </div>
+
+    <div class="flex gap-3 justify-center">
+      <button class="w-btn-primary">다시 시작</button>
+      <button class="w-btn">캐릭터 선택으로</button>
+    </div>
+
+    <div class="screen-notes">
+      <details open><summary>Notes</summary><ul>
+        <li>트리거: HP 0 도달 시</li>
+        <li>인터랙션: "다시 시작" → 같은 캐릭터로 새 게임</li>
+        <li>인터랙션: "캐릭터 선택으로" → 캐릭터 선택 화면(해금)</li>
+        <li>검사 해금 배너는 첫 플레이 시에만 표시</li>
+      </ul></details>
+    </div>
+  </div>
+</div>
+
+<!-- ── 6. 클리어 (첫 플레이 → 검사 해금) ── Scenario 12, 11 -->
+<div id="screen-6" class="screen" data-scenario="scenario-12, scenario-11">
+  <div class="screen-content @container max-w-lg mx-auto p-8">
+
+    <div class="text-center mb-6">
+      <div class="text-3xl font-bold mb-1" style="letter-spacing:.1em;">CLEAR!</div>
+      <div class="text-sm" style="color:var(--w-muted)">생존 성공! 5분을 버텼습니다</div>
+    </div>
+
+    <!-- 검사 해금 배너 -->
+    <div class="w-unlock mb-6">
+      <i data-lucide="star" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      <span class="font-bold">검사 해금!</span>
+      <div class="text-xs mt-1" style="color:var(--w-muted);">캐릭터 선택에서 검사를 고를 수 있습니다</div>
+    </div>
+
+    <!-- 통계 -->
+    <div style="border:1px dashed var(--w-border);margin-bottom:24px;">
+      <div class="w-stat-row"><span class="text-sm">처치한 좀비</span><span class="font-bold">247마리</span></div>
+      <div class="w-stat-row"><span class="text-sm">달성 레벨</span><span class="font-bold">12</span></div>
+    </div>
+
+    <div class="flex gap-3 justify-center">
+      <button class="w-btn-primary">다시 시작</button>
+      <button class="w-btn">캐릭터 선택으로</button>
+    </div>
+
+    <div class="screen-notes">
+      <details open><summary>Notes</summary><ul>
+        <li>트리거: 타이머 0:00 도달 시</li>
+        <li>인터랙션: "다시 시작" → 같은 캐릭터로 새 게임</li>
+        <li>인터랙션: "캐릭터 선택으로" → 캐릭터 선택 화면(해금)</li>
+        <li>검사 해금 배너는 첫 플레이 시에만 표시</li>
+      </ul></details>
+    </div>
+  </div>
+</div>
+
+<!-- ── 7. 게임 플레이 — 검사 ── Scenario 13 -->
+<div id="screen-7" class="screen" data-scenario="scenario-13">
+  <div class="screen-content @container max-w-4xl mx-auto p-4">
+
+    <!-- HUD Top (HP 높음 = 검사 체력 120) -->
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-xs font-bold">HP</span>
+      <div class="w-bar-track" style="width:140px;"><div class="w-bar-fill" style="width:90%;"></div></div>
+      <span class="text-xs" style="color:var(--w-muted)">108/120</span>
+      <div class="text-xl font-bold mx-auto">4:10</div>
+      <span class="text-xs font-bold">LV.2</span>
+      <div class="w-bar-track" style="width:100px;"><div class="w-bar-exp" style="width:30%;"></div></div>
+    </div>
+
+    <!-- Canvas (검사 — 근접 공격 링) -->
+    <div class="w-canvas" style="height:360px;">
+      <!-- melee attack ring (90px radius = 180px diameter) -->
+      <div class="w-ring" style="width:160px;height:160px;left:calc(42% - 80px);top:calc(44% - 80px);"></div>
+
+      <!-- player -->
+      <div class="w-entity w-player" style="width:32px;height:32px;left:calc(42% - 16px);top:calc(44% - 16px);z-index:2;">검사</div>
+
+      <!-- zombies in melee range -->
+      <div class="w-entity" style="width:24px;height:24px;left:48%;top:39%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:37%;top:50%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:50%;top:53%;">Z</div>
+      <!-- far zombies -->
+      <div class="w-entity" style="width:24px;height:24px;left:18%;top:20%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:71%;top:28%;">Z</div>
+      <div class="w-entity" style="width:24px;height:24px;left:76%;top:66%;">Z</div>
+
+      <!-- no bullets label -->
+      <div style="position:absolute;top:6px;left:6px;font-size:10px;color:var(--w-muted);">※ 투사체 없음 — 근접 범위 자동 공격</div>
+
+      <!-- exp orbs -->
+      <div class="w-orb" style="left:44%;top:58%;"></div>
+      <div class="w-orb" style="left:46%;top:61%;"></div>
+    </div>
+
+    <!-- HUD Bottom — 검사 전용 스킬 -->
+    <div class="flex gap-2 mt-2">
+      <div class="w-skill-slot">검 회전 Lv.1</div>
+      <div class="w-skill-empty">—</div>
+      <div class="w-skill-empty">—</div>
+      <div class="w-skill-empty">—</div>
+      <div class="w-skill-empty">—</div>
+    </div>
+
+    <div class="screen-notes">
+      <details open><summary>Notes</summary><ul>
+        <li>트리거: 캐릭터 선택에서 검사 선택 후</li>
+        <li>인터랙션: 근접 범위(점선 원) 안의 모든 적에 자동 피해</li>
+        <li>레벨업 카드 = 검사 전용 5종 (검 회전·돌진 베기·충격파·흡혈 베기·방패 강타)</li>
+        <li>총잡이 스킬(권총 등)은 등장하지 않음</li>
+        <li>HP 상한 120 (총잡이 100보다 높음)</li>
+      </ul></details>
+    </div>
+  </div>
+</div>
+
+<script>
+var screenIds = [];
+function show(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('nav button[id^="nav-"]').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('nav-' + id).classList.add('active');
+}
+function setViewport(mode) {
+  document.body.classList.remove('viewport-mobile', 'viewport-desktop');
+  document.body.classList.add('viewport-' + mode);
+  document.querySelectorAll('.vp-toggle button').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('vp-' + mode).classList.add('active');
+}
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('nav button[id^="nav-"]').forEach(function(b) {
+    screenIds.push(parseInt(b.id.replace('nav-', '')));
+  });
+  var first = document.querySelector('nav button[id^="nav-"]');
+  if (first) first.click();
+  lucide.createIcons();
+});
+</script>
+</body>
+</html>
