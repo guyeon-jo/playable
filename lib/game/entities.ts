@@ -53,11 +53,9 @@ export function clampToMap(pos: Vec2, radius: number): Vec2 {
   };
 }
 
+// camera.x/y = player world position; renderer subtracts and adds CANVAS/2 to center
 export function calcCamera(playerPos: Vec2): Vec2 {
-  return {
-    x: playerPos.x - CANVAS_W / 2,
-    y: playerPos.y - CANVAS_H / 2,
-  };
+  return { x: playerPos.x, y: playerPos.y };
 }
 
 export function spawnExpOrb(pos: Vec2, value: number): ExpOrb {

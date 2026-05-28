@@ -156,7 +156,7 @@ export default function GamePage() {
   const isLevelUp = hudState.status === 'levelup';
 
   return (
-    <div style={{ display: 'inline-flex', flexDirection: 'column', background: '#0d0d0d', userSelect: 'none' }}>
+    <div style={{ width: '100vw', minHeight: '100vh', background: '#0d0d0d', userSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden' }}>
       <GameHUD
         remainingMs={hudState.remainingMs}
         hp={hudState.hp}
