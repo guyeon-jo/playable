@@ -1,11 +1,11 @@
-import type { Player, Enemy, ExpOrb, GameState, Vec2, CharacterType } from '@/types/game';
+import type { Player, Enemy, ExpOrb, GameState, Vec2, CharacterType, SkillId } from '@/types/game';
 import {
   MAP_W, MAP_H, PLAYER_SPEED,
   CANVAS_W, CANVAS_H, EXP_COLLECT_RADIUS,
 } from './constants';
 import { nanoid } from 'nanoid';
 
-const DEFAULT_SKILL: Record<CharacterType, string> = {
+const DEFAULT_SKILL: Record<CharacterType, SkillId> = {
   gunner: 'pistol',
   swordsman: 'spin_slash',
 };
