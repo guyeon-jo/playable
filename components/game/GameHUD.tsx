@@ -27,7 +27,7 @@ export function GameHUD({ remainingMs, hp, maxHp, level, exp, expThreshold, skil
   const expPct = expThreshold > 0 ? (exp / expThreshold) * 100 : 0;
 
   return (
-    <div style={{ width: 800, background: '#111', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 12, color: '#eee', fontSize: 13 }}>
+    <div style={{ width: '100%', maxWidth: '100vh', background: '#111', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 12, color: '#eee', fontSize: 13 }}>
       {/* HP */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
         <span style={{ fontSize: 11, color: '#aaa', whiteSpace: 'nowrap' }}>HP</span>

@@ -1,28 +1,30 @@
 'use client';
 
-import { useRef, useEffect, RefObject } from 'react';
+import { useRef, useEffect, MutableRefObject, RefObject } from 'react';
 import type { GameState } from '@/types/game';
 import { CANVAS_W, CANVAS_H } from '@/lib/game/constants';
 
 interface Props {
-  gameStateRef: RefObject<GameState>;
+  gameStateRef: MutableRefObject<GameState>;
   keysRef: RefObject<Set<string>>;
   onTick: (state: GameState, dt: number, keys: Set<string>) => GameState;
+}
+
+let spriteSheet: HTMLImageElement | null = null;
+function getSpriteSheet(): HTMLImageElement {
+  if (!spriteSheet) {
+    spriteSheet = new Image();
+    spriteSheet.src = '/zombie-characters.png';
+  }
+  return spriteSheet;
 }
 
 export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
-  const stateRef = useRef<GameState>(gameStateRef.current!);
-  // Stable ref to onTick — updated every render without restarting the rAF loop
   const onTickRef = useRef(onTick);
   useEffect(() => { onTickRef.current = onTick; });
-
-  // Sync state when parent provides a new initial state (restart / character change)
-  useEffect(() => {
-    if (gameStateRef.current) stateRef.current = gameStateRef.current;
-  }, [gameStateRef]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,9 +32,10 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    getSpriteSheet();
+
     const handleKeyDown = (e: KeyboardEvent) => {
       keysRef.current?.add(e.key);
-      // prevent page scroll on arrow keys
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
     };
     const handleKeyUp = (e: KeyboardEvent) => { keysRef.current?.delete(e.key); };
@@ -43,9 +46,10 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
       const dt = Math.min((time - (lastTimeRef.current || time)) / 1000, 0.05);
       lastTimeRef.current = time;
 
-      stateRef.current = onTickRef.current(stateRef.current, dt, keysRef.current ?? new Set());
+      // Use gameStateRef.current directly so handleSkillSelect / handleRestart changes are visible
+      gameStateRef.current = onTickRef.current(gameStateRef.current, dt, keysRef.current ?? new Set());
 
-      render(ctx, stateRef.current);
+      render(ctx, gameStateRef.current);
       rafRef.current = requestAnimationFrame(tick);
     };
 
@@ -55,7 +59,6 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  // Empty deps: rAF loop starts once on mount and never restarts
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -64,7 +67,7 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
       ref={canvasRef}
       width={CANVAS_W}
       height={CANVAS_H}
-      style={{ display: 'block', background: '#1a1a1a' }}
+      style={{ display: 'block', background: '#1a1a1a', width: '100%', height: '100%' }}
     />
   );
 }
@@ -115,10 +118,10 @@ function render(ctx: CanvasRenderingContext2D, state: GameState) {
     ctx.restore();
   }
 
-  // projectiles
+  // projectiles (color by size: small=flame orange, medium=yellow, large=red grenade)
   for (const p of projectiles) {
     ctx.save();
-    ctx.fillStyle = '#ffff00';
+    ctx.fillStyle = p.radius >= 12 ? '#ff4400' : p.radius <= 3 ? '#ff8800' : '#ffff00';
     ctx.beginPath();
     ctx.arc(p.pos.x + ox, p.pos.y + oy, p.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -129,15 +132,29 @@ function render(ctx: CanvasRenderingContext2D, state: GameState) {
   const isInvincible = Date.now() < player.invincibleUntil;
   ctx.save();
   ctx.globalAlpha = isInvincible && Math.floor(Date.now() / 100) % 2 === 0 ? 0.3 : 1;
-  ctx.fillStyle = player.character === 'swordsman' ? '#4488ff' : '#44ff88';
-  ctx.beginPath();
-  ctx.arc(player.pos.x + ox, player.pos.y + oy, player.radius, 0, Math.PI * 2);
-  ctx.fill();
+
+  const sheet = spriteSheet;
+  const px = player.pos.x + ox;
+  const py = player.pos.y + oy;
+  const spriteSize = 32;
+  const spriteCol = player.character === 'gunner' ? 0 : 2;
+
+  if (sheet?.complete && sheet.naturalWidth > 0) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sheet, spriteCol * spriteSize, 0, spriteSize, spriteSize,
+      px - player.radius, py - player.radius, player.radius * 2, player.radius * 2);
+  } else {
+    ctx.fillStyle = player.character === 'swordsman' ? '#4488ff' : '#44ff88';
+    ctx.beginPath();
+    ctx.arc(px, py, player.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   if (player.character === 'swordsman') {
     ctx.strokeStyle = 'rgba(100,150,255,0.3)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(player.pos.x + ox, player.pos.y + oy, 80, 0, Math.PI * 2);
+    ctx.arc(px, py, 80, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.restore();

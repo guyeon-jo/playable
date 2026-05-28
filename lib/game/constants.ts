@@ -1,4 +1,4 @@
-export const CANVAS_W = 800;
+export const CANVAS_W = 600;
 export const CANVAS_H = 600;
 export const MAP_W = 2400;
 export const MAP_H = 1800;

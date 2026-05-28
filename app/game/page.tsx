@@ -156,7 +156,7 @@ export default function GamePage() {
   const isLevelUp = hudState.status === 'levelup';
 
   return (
-    <div style={{ width: '100vw', minHeight: '100vh', background: '#0d0d0d', userSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden' }}>
+    <div style={{ width: '100vw', height: '100vh', background: '#0d0d0d', userSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden' }}>
       <GameHUD
         remainingMs={hudState.remainingMs}
         hp={hudState.hp}
@@ -167,32 +167,34 @@ export default function GamePage() {
         skills={hudState.skills}
       />
 
-      <div style={{ position: 'relative' }}>
-        <GameCanvas
-          gameStateRef={gameStateRef}
-          keysRef={keysRef}
-          onTick={handleTick}
-        />
-
-        {isLevelUp && gameStateRef.current.pendingSkillCandidates.length > 0 && (
-          <LevelUpModal
-            candidates={gameStateRef.current.pendingSkillCandidates}
-            player={gameStateRef.current.player}
-            onSelect={handleSkillSelect}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, width: '100%' }}>
+        <div style={{ position: 'relative', height: '100%', aspectRatio: '1 / 1', maxWidth: '100%' }}>
+          <GameCanvas
+            gameStateRef={gameStateRef}
+            keysRef={keysRef}
+            onTick={handleTick}
           />
-        )}
 
-        {isResult && (
-          <ResultScreen
-            status={hudState.status as 'gameover' | 'clear'}
-            survivalMs={hudState.survivalMs}
-            killCount={hudState.killCount}
-            level={hudState.level}
-            firstPlay={!unlocked}
-            onRestart={handleRestart}
-            onCharacterSelect={handleGoToCharacterSelect}
-          />
-        )}
+          {isLevelUp && gameStateRef.current.pendingSkillCandidates.length > 0 && (
+            <LevelUpModal
+              candidates={gameStateRef.current.pendingSkillCandidates}
+              player={gameStateRef.current.player}
+              onSelect={handleSkillSelect}
+            />
+          )}
+
+          {isResult && (
+            <ResultScreen
+              status={hudState.status as 'gameover' | 'clear'}
+              survivalMs={hudState.survivalMs}
+              killCount={hudState.killCount}
+              level={hudState.level}
+              firstPlay={!unlocked}
+              onRestart={handleRestart}
+              onCharacterSelect={handleGoToCharacterSelect}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

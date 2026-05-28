@@ -61,7 +61,7 @@ describe('calcCamera', () => {
   it('카메라가 플레이어 world 좌표를 그대로 반환한다 (렌더러가 CANVAS/2 offset 적용)', () => {
     const playerPos = { x: 500, y: 400 };
     const camera = calcCamera(playerPos);
-    // renderer: screenX = worldX - camera.x + CANVAS_W/2 = 500 - 500 + 400 = 400 = CANVAS_W/2 ✓
+    // renderer: screenX = worldX - camera.x + CANVAS_W/2 = 500 - 500 + 300 = 300 = CANVAS_W/2 ✓
     expect(camera.x).toBe(500);
     expect(camera.y).toBe(400);
   });

@@ -2,7 +2,7 @@ import type { GameState, SkillId } from '@/types/game';
 import { applyMovement, calcCamera, collectExpOrbs, spawnExpOrb } from './entities';
 import { updateEnemies } from './enemies';
 import { applyEnemyDamage } from './physics';
-import { tryFireProjectile, updateProjectiles, applyProjectileDamage, applyMeleeAttack } from './weapons';
+import { tryFireProjectiles, updateProjectiles, applyProjectileDamage, applyMeleeAttack } from './weapons';
 import { getSkillCandidates } from './skills';
 import { GAME_DURATION_MS } from './constants';
 import { getWaveIndex, getWaveConfig } from './spawn';
@@ -47,9 +47,9 @@ export function gameTick(
 
   // Attack
   if (s.player.character === 'gunner') {
-    const { projectile, updatedPlayer } = tryFireProjectile(s.player, s.enemies, now);
-    if (projectile) {
-      s = { ...s, player: updatedPlayer, projectiles: [...s.projectiles, projectile] };
+    const { projectiles: newProjs, updatedPlayer } = tryFireProjectiles(s.player, s.enemies, now);
+    if (newProjs.length > 0) {
+      s = { ...s, player: updatedPlayer, projectiles: [...s.projectiles, ...newProjs] };
     }
   } else {
     const beforeEnemies = s.enemies;

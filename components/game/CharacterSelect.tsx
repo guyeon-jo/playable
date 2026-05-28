@@ -41,9 +41,20 @@ export function CharacterSelect({ unlocked, onSelect }: Props) {
                 transition: 'border-color 0.2s',
               }}
             >
-              {/* Sprite placeholder */}
-              <div style={{ width: 72, height: 72, background: '#2a2a2a', border: '1px dashed #444', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 11, borderRadius: 4 }}>
-                {isLocked ? '🔒' : char.type === 'gunner' ? '🔫' : '⚔️'}
+              {/* Character sprite */}
+              <div style={{
+                width: 72, height: 72, margin: '0 auto 12px',
+                backgroundImage: 'url(/zombie-characters.png)',
+                backgroundSize: '288px 432px',
+                backgroundPosition: char.type === 'gunner' ? '0px 0px' : '-144px 0px',
+                imageRendering: 'pixelated',
+                borderRadius: 4,
+                position: 'relative',
+                filter: isLocked ? 'grayscale(1) brightness(0.4)' : 'none',
+              }}>
+                {isLocked && (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🔒</div>
+                )}
               </div>
 
               <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{char.name}</div>
