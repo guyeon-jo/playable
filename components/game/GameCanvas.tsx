@@ -30,6 +30,15 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      keysRef.current?.add(e.key);
+      // prevent page scroll on arrow keys
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+    };
+    const handleKeyUp = (e: KeyboardEvent) => { keysRef.current?.delete(e.key); };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
     const tick = (time: number) => {
       const dt = Math.min((time - (lastTimeRef.current || time)) / 1000, 0.05);
       lastTimeRef.current = time;
@@ -41,7 +50,11 @@ export function GameCanvas({ gameStateRef, keysRef, onTick }: Props) {
     };
 
     rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   // Empty deps: rAF loop starts once on mount and never restarts
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
